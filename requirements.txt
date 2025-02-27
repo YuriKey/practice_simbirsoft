@@ -8,3 +8,4 @@ Faker
 allure-pytest
 allure-python-commons
 colorama
+webdriver_manager

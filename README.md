@@ -70,13 +70,13 @@
     *   для Windows:
         
         ```plaintext
-        python -m venv venv
+        python -m venv .venv
         ```
         
     *   для MacOS:
         
         ```plaintext
-        python3 -m venv venv
+        python3 -m venv .venv
         ```
         
         и активируйте его:
@@ -84,11 +84,11 @@
     *   для Windows:
     
     ```plaintext
-    venv\Scripts\activate
+    .venv\Scripts\activate
     ```
     
     ```plaintext
-    source venv/bin/activate
+    source .venv/bin/activate
     ```
     
 5.  Установите зависимости, указанные в файле **requirements.txt**:
