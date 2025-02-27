@@ -1,9 +1,10 @@
-# execute in .venv: pip install -r requirements.txt
-
 setuptools
 wheel
-selenium~=4.25.0
-pytest~=8.3.3
+selenium
+pytest
 python-dotenv
 requests
-faker
+Faker
+allure-pytest
+allure-python-commons
+colorama

@@ -2,7 +2,6 @@ import pytest
 from data.assertions import assertions
 from data.urls import urls
 import requests
-from http import HTTPStatus
 
 
 @pytest.mark.parametrize("url", [urls.URL])
