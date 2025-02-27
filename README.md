@@ -56,13 +56,13 @@
 3.  Склонируйте к себе репозиторий, в котором хранится проект тестового задания, через выполнение команды в терминале:
     
     ```plaintext
-    git clone https://github.com/YuriKey/internship_simbirsoft.git
+    git clone https://github.com/YuriKey/practice_simbirsoft.git
     ```
     
     и перейдите в директорию проекта:
     
     ```plaintext
-    cd internship_simbirsoft
+    cd practice_simbirsoft
     ```
     
 4.  Создайте виртуальное окружение командой:
