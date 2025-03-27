@@ -1,8 +1,8 @@
 name: Parallel Selenium Tests
 
 on:
-  push:
-    branches: [ui_tests]
+#  push:
+#    branches: [ui_tests]
   pull_request:
     branches: [master]
 
