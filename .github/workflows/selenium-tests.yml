@@ -1,4 +1,4 @@
-name: Parallel Selenium Tests with Allure
+name: Parallel Selenium Tests
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
@@ -20,35 +21,29 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser libgbm1
+
+      - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install pytest pytest-xdist selenium pytest-html allure-pytest faker webdriver-manager
 
-      - name: Install Chrome
+      - name: Run tests
         run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser
-
-      - name: Run tests with Allure
-        run: |
-          rm -rf ./allure-results || true
           python -m pytest tests/ \
             -n auto \
             --html=report.html \
             --self-contained-html \
             --alluredir=./allure-results
 
-      - name: Upload Allure results
+      - name: Upload reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: allure-results
-          path: ./allure-results
-
-      - name: Upload HTML report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: pytest-html-report
-          path: report.html
+          name: test-reports
+          path: |
+            report.html
+            ./allure-results/
