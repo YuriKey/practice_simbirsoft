@@ -1,6 +1,6 @@
-from utils import table_parser as tp, find_avg_name_length as fnl
 from data.urls import Urls
 from pages.customers_list_page import CustomersListPage
+from utils import table_parser as tp, find_avg_name_length as fnl
 import allure
 
 urls = Urls()
