@@ -14,14 +14,11 @@ class BasePage:
     def open(self, url):
         self.browser.get(url)
 
-    def click(self, locator):
-        self.find_element(locator).click()
+    def click(self, args):
+        self.find_element(args).click()
 
     def send_keys(self, locator, text):
         self.find_element(locator).send_keys(text)
 
     def element_is_visible(self, locator, timeout=10):
         return wait(self.browser, timeout=timeout).until(EC.visibility_of_element_located(locator))
-
-    # def element_is_present(self, locator, timeout=10):
-    #     return wait(self.browser, timeout=timeout).until(EC.presence_of_element_located(locator))

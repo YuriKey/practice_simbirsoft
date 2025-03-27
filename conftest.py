@@ -3,7 +3,7 @@ from selenium.webdriver.chrome.options import Options
 import pytest
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def browser():
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
@@ -11,4 +11,3 @@ def browser():
     chrome_browser.implicitly_wait(3)
     yield chrome_browser
     chrome_browser.quit()
-

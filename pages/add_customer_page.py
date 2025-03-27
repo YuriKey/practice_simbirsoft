@@ -17,3 +17,6 @@ class AddCustomerPage(BasePage):
 
     def submit_button(self):
         return self.find_element(loc.ADD_BUTTON)
+
+    def customers_list_btn(self):
+        return self.find_element(loc.CUSTOMERS_LIST_BUTTON)
