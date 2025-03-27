@@ -21,6 +21,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+          google-chrome-stable --version
+          sudo rm /usr/bin/chromedriver
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
