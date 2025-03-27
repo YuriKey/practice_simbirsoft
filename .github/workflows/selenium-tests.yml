@@ -1,10 +1,10 @@
-name: Parallel Selenium Tests
+name: Parallel Selenium Tests with Allure
 
 on:
   push:
-    branches: [ ui_tests ]
+    branches: [ui_tests]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   test:
@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pytest pytest-xdist selenium pytest-html
+          pip install pytest pytest-xdist selenium pytest-html allure-pytest
 
       - name: Install Chrome & Chromedriver
         run: |
@@ -32,13 +32,25 @@ jobs:
           sudo rm -f /usr/bin/chromedriver
           sudo ln -s /usr/lib/chromium-browser/chromedriver /usr/bin/chromedriver
 
-      - name: Run tests in parallel
+      - name: Run tests with Allure
         run: |
-          python -m pytest tests/ -n auto --html=report.html --self-contained-html
+          rm -rf ./allure-results || true
+          python -m pytest tests/ \
+            -n auto \
+            --html=report.html \
+            --self-contained-html \
+            --alluredir=./allure-results
 
-      - name: Upload test report
+      - name: Upload Allure results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pytest-report
+          name: allure-results
+          path: ./allure-results
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-html-report
           path: report.html
