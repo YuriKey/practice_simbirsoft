@@ -1,6 +1,6 @@
-from data.urls import Urls
-from pages.customers_list_page import CustomersListPage
-from utils import table_parser as tp
+from ui_tests.data.urls import Urls
+from ui_tests.pages.customers_list_page import CustomersListPage
+from ui_tests.utils import table_parser as tp
 import allure
 import pytest
 

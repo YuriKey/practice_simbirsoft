@@ -1,6 +1,6 @@
-from data.urls import Urls
-from pages.add_customer_page import AddCustomerPage
-from utils import name_code_generator as ng, table_parser as tp
+from ui_tests.data.urls import Urls
+from ui_tests.pages.add_customer_page import AddCustomerPage
+from ui_tests.utils import name_code_generator as ng, table_parser as tp
 import allure
 import pytest
 

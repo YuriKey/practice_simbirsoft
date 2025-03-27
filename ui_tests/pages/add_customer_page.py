@@ -1,5 +1,5 @@
-from locators.add_customer_locators import AddCustomerLocators as loc
-from pages.base_page import BasePage
+from ui_tests.locators.add_customer_locators import AddCustomerLocators as loc
+from ui_tests.pages.base_page import BasePage
 
 
 class AddCustomerPage(BasePage):
