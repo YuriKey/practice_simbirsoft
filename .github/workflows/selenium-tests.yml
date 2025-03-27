@@ -40,7 +40,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest tests/ \
+          python -m pytest ui_tests/tests/ \
             -n auto \
             --html=report.html \
             --self-contained-html \
