@@ -18,12 +18,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.13"
+          python-version: "3.11"  # Изменено с 3.13 (на 2024 год Python 3.13 не выпущен)
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pytest pytest-xdist selenium
+          pip install pytest pytest-xdist selenium pytest-html
 
       - name: Install Chrome & Chromedriver
         run: |
@@ -36,7 +36,7 @@ jobs:
           python -m pytest tests/ -n auto --html=report.html --self-contained-html
 
       - name: Upload test report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Обновлено с v3 на v4
         if: always()
         with:
           name: pytest-report
