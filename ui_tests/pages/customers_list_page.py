@@ -11,3 +11,7 @@ class CustomersListPage(BasePage):
 
     def sort_btn_click(self):
         self.sort_by_name().click()
+
+    @staticmethod
+    def get_delete_button_loc(name):
+        return "xpath", f"//tr[td[@class='ng-binding' and text()='{name}']]//button[@ng-click='deleteCust(cust)']"
