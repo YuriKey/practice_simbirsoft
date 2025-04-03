@@ -10,24 +10,32 @@ generator = ItemGenerator()
 
 
 @allure.epic("Тестирование API.")
-@allure.feature("Сущность.")
-@allure.testcase("test_00_create_item")
-@allure.title("Создание и проверка сущности.")
-def test_create_item():
-    with allure.step("1. Сгенерировать данные для сущности."):
-        data = generator.generate_item()
+@allure.feature("Работа с сущностями.")
+@allure.testcase("00_Создание сущности.")
+class TestItemCreate:
+    @allure.title("Создание и проверка новой сущности.")
+    @allure.description("""
+        Тест проверяет:
+        1. Генерацию данных для сущности
+        2. Создание сущности через API
+        3. Получение созданной сущности
+        4. Сравнение данных
+        """)
+    def test_create_item(self):
+        with allure.step("1. Сгенерировать данные для сущности."):
+            data = generator.generate_item()
 
-    with allure.step("2. Отправить запрос на создание сущности. Получить её id."):
-        response_post = requests.post(f"{urls.BASE_URL}/create", json=data)
-        created_item_id = response_post.json()
+        with allure.step("2. Отправить запрос на создание сущности. Получить её id."):
+            response_post = requests.post(f"{urls.BASE_URL}/create", json=data)
+            created_item_id = response_post.json()
 
-    with allure.step("3. Проверить статус код запроса на создание сущности."):
-        a.assert_status_code(response_post)
+        with allure.step("3. Проверить статус код запроса на создание сущности."):
+            a.assert_status_code(response_post)
 
-    with allure.step("4. Получить сущность по id. Произвести валидацию через Pydantic."):
-        response_get = requests.get(f"{urls.BASE_URL}/get/{created_item_id}")
-        a.assert_status_code(response_get)
-        item = ItemData(**response_get.json())
+        with allure.step("4. Получить сущность по id. Произвести валидацию через Pydantic."):
+            response_get = requests.get(f"{urls.BASE_URL}/get/{created_item_id}")
+            a.assert_status_code(response_get)
+            item = ItemData(**response_get.json())
 
-    with allure.step("5. Сравнить сгенерированные и полученные данные."):
-        a.assert_props_are_equal(item, data)
+        with allure.step("5. Сравнить сгенерированные и полученные данные."):
+            a.assert_props_are_equal(item, data)

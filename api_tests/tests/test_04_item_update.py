@@ -11,9 +11,9 @@ from api_tests.utils.assertions import assertions as a
 generator = ItemGenerator()
 
 
-@allure.epic("Тестирование API")
-@allure.feature("Сущность")
-@allure.testcase("test_04_update_item")
+@allure.epic("Тестирование API.")
+@allure.feature("Работа с сущностями.")
+@allure.testcase("04_Изменение сущности.")
 @allure.title("Изменение сущности")
 def test_update_item(create_item):
     with allure.step("1. Получить тестовые данные из фикстуры."):

@@ -9,8 +9,8 @@ from api_tests.utils.assertions import assertions as a
 
 
 @allure.epic("Тестирование API.")
-@allure.feature("Сущность.")
-@allure.testcase("test_02_delete_item")
+@allure.feature("Работа с сущностями.")
+@allure.testcase("02_Удаление сущности.")
 @allure.title("Удаление сущности по id.")
 def test_delete_item(create_item):
     with allure.step("1. Создать сущность. Получить ее id."):

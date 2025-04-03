@@ -7,8 +7,8 @@ from api_tests.utils.assertions import assertions as a
 
 
 @allure.epic("Тестирование API.")
-@allure.feature("Сущность.")
-@allure.testcase("test_03_get_all_items")
+@allure.feature("Работа с сущностями.")
+@allure.testcase("03_Получение всех сущностей.")
 @allure.title("Получение всех сущностей с пагинацией.")
 def test_get_all_items(create_item):
     with allure.step("1. Создать сущность и задать параметры пагинации."):
