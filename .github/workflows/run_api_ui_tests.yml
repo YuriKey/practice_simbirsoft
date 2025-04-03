@@ -1,0 +1,51 @@
+name: Run Tests in Docker (API + UI)
+
+on:
+  push:
+    branches:
+      - "**"
+      - "!master"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: selenium/standalone-chrome:latest
+      options: --shm-size=2g
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-xdist allure-pytest
+
+      - name: Run API Tests
+        run: |
+          python -m pytest api_tests/tests/ \
+            -n auto \
+            --alluredir=./allure-results
+
+      - name: Run UI Tests
+        run: |
+          python -m pytest ui_tests/tests/ \
+            -n auto \
+            --html=report.html \
+            --self-contained-html \
+            --alluredir=./allure-results
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            report.html
+            ./allure-results/
