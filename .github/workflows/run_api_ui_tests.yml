@@ -419,6 +419,125 @@
 #          git clean -ffdx || true
 
 
+#name: Run Tests
+#
+#on:
+#  push:
+#    branches:
+#      - "**"
+#      - "!master"
+#
+#jobs:
+#  api-tests:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          clean: true
+#          fetch-depth: 0
+#
+#      - name: Set up Python
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: "3.11"
+#
+#      - name: Install Docker and Docker Compose
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y ca-certificates curl
+#          sudo install -m 0755 -d /etc/apt/keyrings
+#          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+#          sudo chmod a+r /etc/apt/keyrings/docker.asc
+#          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+#          sudo apt-get update
+#          sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+#
+#          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+#          sudo chmod +x /usr/local/bin/docker-compose
+#
+#      - name: Start Backend
+#        working-directory: ./api_tests/backend
+#        run: |
+#          docker-compose up --build -d
+#          timeout 120s bash -c 'while [[ -z "$(docker-compose ps -q postgres)" ]] || [[ "$(docker inspect -f '\''{{.State.Health.Status}}'\'' $(docker-compose ps -q postgres))" != "healthy" ]]; do sleep 5; done'
+#          timeout 60s bash -c 'until curl -s http://localhost:8080/healthcheck >/dev/null; do sleep 3; done'
+#          docker-compose ps
+#          docker-compose logs service --tail=50
+#
+#      - name: Check backend health
+#        working-directory: ./api_tests/backend
+#        run: |
+#          curl -v --retry 5 --retry-delay 3 --retry-all-errors http://localhost:8080/healthcheck || {
+#            docker-compose logs service --tail=50
+#            exit 1
+#          }
+#
+#      - name: Install dependencies
+#        run: |
+#          pip install --upgrade pip
+#          pip install -r requirements.txt
+#          pip install pytest-xdist allure-pytest
+#
+#      - name: Run API Tests
+#        run: |
+#          python -m pytest api_tests/tests/ \
+#            -n auto \
+#            --alluredir=./allure-results-api
+#
+#      - name: Upload API reports
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: api-test-reports
+#          path: ./allure-results-api/
+#
+#      - name: Cleanup Docker
+#        if: always()
+#        working-directory: ./api_tests/backend
+#        run: |
+#          docker-compose down -v --remove-orphans
+#          docker system prune -a -f
+#
+#  ui-tests:
+#    needs: api-tests
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Setup Chrome
+#        uses: browser-actions/setup-chrome@latest
+#
+#      - name: Checkout code (simplified)
+#        uses: actions/checkout@v3
+#        with:
+#          path: src
+#
+#      - name: Set up Python
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: "3.11"
+#
+#      - name: Install dependencies
+#        working-directory: src
+#        run: |
+#          pip install --upgrade pip
+#          pip install -r requirements.txt
+#          pip install pytest-xdist pytest-html selenium webdriver-manager
+#
+#      - name: Run UI Tests
+#        working-directory: src
+#        run: |
+#          python -m pytest ui_tests/tests/ \
+#            -n auto \
+#            --html=ui-report.html \
+#            --self-contained-html
+#
+#      - name: Upload UI reports
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: ui-test-reports
+#          path: src/ui-report.html
+
+
 name: Run Tests
 
 on:
@@ -461,35 +580,33 @@ jobs:
           docker-compose up --build -d
           timeout 120s bash -c 'while [[ -z "$(docker-compose ps -q postgres)" ]] || [[ "$(docker inspect -f '\''{{.State.Health.Status}}'\'' $(docker-compose ps -q postgres))" != "healthy" ]]; do sleep 5; done'
           timeout 60s bash -c 'until curl -s http://localhost:8080/healthcheck >/dev/null; do sleep 3; done'
-          docker-compose ps
-          docker-compose logs service --tail=50
 
-      - name: Check backend health
-        working-directory: ./api_tests/backend
-        run: |
-          curl -v --retry 5 --retry-delay 3 --retry-all-errors http://localhost:8080/healthcheck || {
-            docker-compose logs service --tail=50
-            exit 1
-          }
-
-      - name: Install dependencies
+      - name: Install API test dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest-xdist allure-pytest
+          pip install pytest-xdist pytest-html allure-pytest
 
-      - name: Run API Tests
+      - name: Run API Tests with HTML report
         run: |
           python -m pytest api_tests/tests/ \
             -n auto \
-            --alluredir=./allure-results-api
+            --html=api-report.html \
+            --self-contained-html \
+            --alluredir=./allure-results
 
-      - name: Upload API reports
+      - name: Upload API HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-html-report
+          path: api-report.html
+
+      - name: Upload Allure results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: api-test-reports
-          path: ./allure-results-api/
+          name: allure-results
+          path: ./allure-results
 
       - name: Cleanup Docker
         if: always()
@@ -505,7 +622,7 @@ jobs:
       - name: Setup Chrome
         uses: browser-actions/setup-chrome@latest
 
-      - name: Checkout code (simplified)
+      - name: Checkout code
         uses: actions/checkout@v3
         with:
           path: src
@@ -515,7 +632,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install UI test dependencies
         working-directory: src
         run: |
           pip install --upgrade pip
@@ -530,9 +647,8 @@ jobs:
             --html=ui-report.html \
             --self-contained-html
 
-      - name: Upload UI reports
+      - name: Upload UI report
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: ui-test-reports
+          name: ui-html-report
           path: src/ui-report.html
