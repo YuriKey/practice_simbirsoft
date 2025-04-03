@@ -14,12 +14,14 @@ generator = ItemGenerator()
 @allure.epic("Тестирование API.")
 @allure.feature("Работа с сущностями.")
 @allure.testcase("04_Изменение сущности.")
+@allure.title("Изменение сущности.")
 class TestItemUpdate:
-    @allure.title("Изменение сущности")
+    @allure.title("Изменение сущности (positive case).")
     @allure.description("""
+    Тест проверяет:
     1. Получение данных сущности по ID.
     2. Корректность PATCH-запроса для обновления сущности.
-    3. Идентичность данных измененной сущности с переданными данными.
+    3. Идентичность данных измененной сущности переданным данными.
     4. Изменение полей сущности кроме ID.
     """)
     def test_update_item(self, create_item):

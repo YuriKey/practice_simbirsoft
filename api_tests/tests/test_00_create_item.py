@@ -12,8 +12,9 @@ generator = ItemGenerator()
 @allure.epic("Тестирование API.")
 @allure.feature("Работа с сущностями.")
 @allure.testcase("00_Создание сущности.")
+@allure.title("Создание новой сущности.")
 class TestItemCreate:
-    @allure.title("Создание и проверка новой сущности.")
+    @allure.title("Создание новой сущности (positive case).")
     @allure.description("""
         Тест проверяет:
         1. Генерацию данных для сущности.

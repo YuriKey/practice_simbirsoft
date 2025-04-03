@@ -9,16 +9,18 @@ from api_tests.utils.assertions import assertions as a
 @allure.epic("Тестирование API.")
 @allure.feature("Работа с сущностями.")
 @allure.testcase("03_Получение всех сущностей.")
+@allure.title("Получение всех сущностей.")
 class TestGetAllItems:
     @allure.title("Получение всех сущностей с пагинацией.")
     @allure.description("""
+        Тест проверяет:
         1. Создание сущности.
         2. Формирование страницы сущностей по параметрам пагинации.
         3. Статус код запроса на получение всех сущностей.
         4. Структуру каждой сущности.
         5. Ограничение пагинации.
     """)
-    def test_get_all_items(self, create_item):
+    def test_get_all_items_pagination(self, create_item):
         with allure.step("1. Создать сущность и задать параметры пагинации."):
             _ = create_item
             params = {"page": 1, "perPage": 5}

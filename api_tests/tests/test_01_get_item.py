@@ -9,8 +9,9 @@ from api_tests.utils.assertions import assertions as a
 @allure.epic("Тестирование API.")
 @allure.feature("Работа с сущностями.")
 @allure.testcase("01_Получение данных сущности по id.")
+@allure.title("Получение данных сущности.")
 class TestGetItem:
-    @allure.title("Получение данных сущности по id.")
+    @allure.title("Получение данных сущности по id (positive case).")
     @allure.description("""
         Тест проверяет:
         1. Получение данных сущности по id.

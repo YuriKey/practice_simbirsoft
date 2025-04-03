@@ -11,6 +11,7 @@ from api_tests.utils.assertions import assertions as a
 @allure.epic("Тестирование API.")
 @allure.feature("Работа с сущностями.")
 @allure.testcase("02_Удаление сущности.")
+@allure.title("Удаление сущности.")
 class TestDeleteItem:
     @allure.title("Удаление сущности по id.")
     @allure.description("""

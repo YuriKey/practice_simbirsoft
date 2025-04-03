@@ -9,9 +9,9 @@ generator = ItemGenerator()
 
 
 @pytest.fixture(scope="module")
+@allure.title("Генерация случайных данных для сущности.")
 def create_item():
     data = generator.generate_item()
     response = requests.post(f"{urls.BASE_URL}/create", json=data)
     item_id = response.json()
-    with allure.step("Сгенерированы случайные данные для сущности."):
-        return item_id, data
+    return item_id, data
