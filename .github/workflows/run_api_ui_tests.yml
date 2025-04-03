@@ -36,28 +36,29 @@ jobs:
       - name: Start Backend
         working-directory: ./api_tests/backend
         run: |
-          # Запускаем сервисы (указываем явно service, так как он основной)
-          docker-compose up --build -d service
+          # Запускаем сервисы в фоновом режиме
+          docker-compose up --build -d
 
-          # Ждем пока postgres станет healthy
-          timeout 120s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} $(docker-compose ps -q postgres)" == "healthy" ]; do sleep 5; done'
+          # Ждем пока postgres станет healthy (исправленный синтаксис)
+          echo "Waiting for postgres to become healthy..."
+          timeout 120s bash -c 'while [[ -z "$(docker-compose ps -q postgres)" ]] || [[ "$(docker inspect -f '\''{{.State.Health.Status}}'\'' $(docker-compose ps -q postgres))" != "healthy" ]]; do sleep 5; done'
 
-          # Ждем пока service запустится (проверяем логи)
-          timeout 60s bash -c 'until docker-compose logs service | grep "Started in"; do sleep 3; done'
+          # Ждем пока основной сервис запустится
+          echo "Waiting for service to start..."
+          timeout 60s bash -c 'until curl -s http://localhost:8080/healthcheck >/dev/null; do sleep 3; done'
 
           # Дополнительная диагностика
+          echo "Current containers state:"
           docker-compose ps
-          docker-compose logs service
+          echo "Service logs:"
+          docker-compose logs service --tail=50
 
       - name: Check backend health
         working-directory: ./api_tests/backend
         run: |
-          # Получаем IP сервиса (service, а не backend)
-          SERVICE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker-compose ps -q service))
-
           # Проверяем healthcheck (используем порт 8080 как указано в compose)
-          echo "Checking service at $SERVICE_IP:${HTTP_PORT}"
-          curl -v --retry 10 --retry-delay 3 --retry-all-errors http://$SERVICE_IP:${HTTP_PORT}/healthcheck
+          echo "Checking service healthcheck at localhost:8080"
+          curl -v --retry 5 --retry-delay 3 --retry-all-errors http://localhost:8080/healthcheck
 
       - name: Install dependencies
         run: |
