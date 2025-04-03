@@ -36,22 +36,28 @@ jobs:
       - name: Start Backend
         working-directory: ./api_tests/backend
         run: |
-          # Собираем и запускаем сервисы
-          docker-compose up --build -d
+          # Запускаем сервисы (указываем явно service, так как он основной)
+          docker-compose up --build -d service
 
-          # Ждем готовности сервиса (увеличиваем время ожидания)
-          timeout 60s bash -c 'until docker-compose logs | grep "Application started"; do sleep 5; done' || true
+          # Ждем пока postgres станет healthy
+          timeout 120s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} $(docker-compose ps -q postgres)" == "healthy" ]; do sleep 5; done'
 
-          # Проверяем список запущенных контейнеров (для дебага)
+          # Ждем пока service запустится (проверяем логи)
+          timeout 60s bash -c 'until docker-compose logs service | grep "Started in"; do sleep 3; done'
+
+          # Дополнительная диагностика
           docker-compose ps
+          docker-compose logs service
 
       - name: Check backend health
+        working-directory: ./api_tests/backend
         run: |
-          # Получаем IP контейнера с бэкендом
-          CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker-compose -f api_tests/backend/docker-compose.yml ps -q backend))
+          # Получаем IP сервиса (service, а не backend)
+          SERVICE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker-compose ps -q service))
 
-          # Проверяем доступность (используем IP контейнера)
-          curl --retry 10 --retry-delay 5 --retry-all-errors http://$CONTAINER_IP:8000/healthcheck
+          # Проверяем healthcheck (используем порт 8080 как указано в compose)
+          echo "Checking service at $SERVICE_IP:${HTTP_PORT}"
+          curl -v --retry 10 --retry-delay 3 --retry-all-errors http://$SERVICE_IP:${HTTP_PORT}/healthcheck
 
       - name: Install dependencies
         run: |
