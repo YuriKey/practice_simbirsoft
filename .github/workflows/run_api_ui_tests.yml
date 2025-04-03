@@ -36,12 +36,22 @@ jobs:
       - name: Start Backend
         working-directory: ./api_tests/backend
         run: |
+          # Собираем и запускаем сервисы
           docker-compose up --build -d
-          sleep 15  # Ожидаем инициализацию сервисов
+
+          # Ждем готовности сервиса (увеличиваем время ожидания)
+          timeout 60s bash -c 'until docker-compose logs | grep "Application started"; do sleep 5; done' || true
+
+          # Проверяем список запущенных контейнеров (для дебага)
+          docker-compose ps
 
       - name: Check backend health
         run: |
-          curl --retry 5 --retry-delay 5 --retry-all-errors http://localhost:8000/healthcheck
+          # Получаем IP контейнера с бэкендом
+          CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker-compose -f api_tests/backend/docker-compose.yml ps -q backend))
+
+          # Проверяем доступность (используем IP контейнера)
+          curl --retry 10 --retry-delay 5 --retry-all-errors http://$CONTAINER_IP:8000/healthcheck
 
       - name: Install dependencies
         run: |
