@@ -119,6 +119,144 @@
 #          name: ui-test-reports
 #          path: ui-report.html
 
+#name: Run Tests
+#
+#on:
+#  push:
+#    branches:
+#      - "**"
+#      - "!master"
+#
+#jobs:
+#  api-tests:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          clean: true
+#          fetch-depth: 0
+#
+#      - name: Set up Python
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: "3.11"
+#
+#      - name: Install Docker and Docker Compose
+#        run: |
+#          # Установка Docker
+#          sudo apt-get update
+#          sudo apt-get install -y ca-certificates curl
+#          sudo install -m 0755 -d /etc/apt/keyrings
+#          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+#          sudo chmod a+r /etc/apt/keyrings/docker.asc
+#          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+#          sudo apt-get update
+#          sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+#
+#          # Установка Docker Compose
+#          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+#          sudo chmod +x /usr/local/bin/docker-compose
+#
+#      - name: Start Backend
+#        working-directory: ./api_tests/backend
+#        run: |
+#          # Запускаем сервисы в фоновом режиме
+#          docker-compose up --build -d
+#
+#          # Ждем пока postgres станет healthy (исправленный синтаксис)
+#          echo "Waiting for postgres to become healthy..."
+#          timeout 120s bash -c 'while [[ -z "$(docker-compose ps -q postgres)" ]] || [[ "$(docker inspect -f '\''{{.State.Health.Status}}'\'' $(docker-compose ps -q postgres))" != "healthy" ]]; do sleep 5; done'
+#
+#          # Ждем пока основной сервис запустится
+#          echo "Waiting for service to start..."
+#          timeout 60s bash -c 'until curl -s http://localhost:8080/healthcheck >/dev/null; do sleep 3; done'
+#
+#          # Дополнительная диагностика
+#          echo "Current containers state:"
+#          docker-compose ps
+#          echo "Service logs:"
+#          docker-compose logs service --tail=50
+#
+#      - name: Check backend health
+#        working-directory: ./api_tests/backend
+#        run: |
+#          # Проверяем healthcheck (используем порт 8080 как указано в compose)
+#          echo "Checking service healthcheck at localhost:8080"
+#          curl -v --retry 5 --retry-delay 3 --retry-all-errors http://localhost:8080/healthcheck || {
+#            echo "Health check failed!"
+#            docker-compose logs service --tail=50
+#            exit 1
+#          }
+#
+#      - name: Install dependencies
+#        run: |
+#          pip install --upgrade pip
+#          pip install -r requirements.txt
+#          pip install pytest-xdist allure-pytest
+#
+#      - name: Run API Tests
+#        run: |
+#          python -m pytest api_tests/tests/ \
+#            -n auto \
+#            --alluredir=./allure-results-api
+#
+#      - name: Upload API reports
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: api-test-reports
+#          path: ./allure-results-api/
+#
+#      - name: Cleanup Docker
+#        if: always()
+#        working-directory: ./api_tests/backend
+#        run: |
+#          docker-compose down -v --remove-orphans
+#          docker system prune -a -f
+#          sudo chown -R runner:runner "$GITHUB_WORKSPACE"
+#
+#  ui-tests:
+#    needs: api-tests
+#    runs-on: ubuntu-latest
+#    container:
+#      image: selenium/standalone-chrome:latest
+#      options: --shm-size=2g
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          clean: true
+#
+#      - name: Set up Python
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: "3.11"
+#
+#      - name: Install dependencies
+#        run: |
+#          pip install --upgrade pip
+#          pip install -r requirements.txt
+#          pip install pytest-xdist pytest-html
+#
+#      - name: Run UI Tests
+#        run: |
+#          python -m pytest ui_tests/tests/ \
+#            -n auto \
+#            --html=ui-report.html \
+#            --self-contained-html
+#
+#      - name: Upload UI reports
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: ui-test-reports
+#          path: ui-report.html
+#
+#      - name: Cleanup workspace
+#        if: always()
+#        run: |
+#          sudo chown -R runner:runner "$GITHUB_WORKSPACE"
+#          git clean -ffdx
 
 name: Run Tests
 
@@ -132,33 +270,96 @@ jobs:
   api-tests:
     runs-on: ubuntu-latest
     steps:
-      # Шаг 1: Исправленная версия checkout с обработкой ошибок
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           clean: true
           fetch-depth: 0
-        continue-on-error: true  # Продолжать даже при ошибке
+          persist-credentials: false
+        continue-on-error: true
 
-      # Шаг 2: Принудительное исправление прав
-      - name: Fix workspace permissions
+      - name: Fix initial permissions
         run: |
           sudo chown -R $(whoami) "$GITHUB_WORKSPACE"
           sudo chmod -R 755 "$GITHUB_WORKSPACE"
-          ls -la "$GITHUB_WORKSPACE" || true
 
-      # Остальные шаги остаются без изменений
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
-      # ... остальные шаги из вашего workflow ...
+      - name: Install Docker and Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
-      # Добавляем финальную очистку
-      - name: Final cleanup
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: Start Backend
+        working-directory: ./api_tests/backend
+        run: |
+          docker-compose up --build -d
+          
+          echo "Waiting for postgres to become healthy..."
+          timeout 120s bash -c '
+            while ! docker-compose ps -q postgres >/dev/null || \
+                  [ "$(docker inspect -f '\''{{.State.Health.Status}}'\'' $(docker-compose ps -q postgres))" != "healthy" ];
+            do 
+              sleep 5; 
+            done'
+          
+          echo "Waiting for service to start..."
+          timeout 60s bash -c '
+            until curl -sf http://localhost:8080/healthcheck >/dev/null; do 
+              sleep 3; 
+            done'
+          
+          echo "=== Container status ==="
+          docker-compose ps -a
+          echo "=== Service logs ==="
+          docker-compose logs service --tail=50
+
+      - name: Check backend health
+        working-directory: ./api_tests/backend
+        run: |
+          echo "Testing service health..."
+          curl -v --fail --retry 5 --retry-delay 3 --max-time 5 \
+            http://localhost:8080/healthcheck || {
+              echo "Health check failed!"
+              docker-compose logs service --tail=100
+              exit 1
+            }
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-xdist allure-pytest
+
+      - name: Run API Tests
+        run: |
+          python -m pytest api_tests/tests/ \
+            -n auto \
+            --alluredir=./allure-results-api
+
+      - name: Upload API reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-test-reports
+          path: ./allure-results-api/
+
+      - name: Complete cleanup
         if: always()
         run: |
+          cd api_tests/backend && docker-compose down -v --remove-orphans
           docker system prune -a -f
           sudo rm -rf "$GITHUB_WORKSPACE/_temp"
           sudo chown -R $(whoami) "$GITHUB_WORKSPACE"
@@ -166,13 +367,17 @@ jobs:
   ui-tests:
     needs: api-tests
     runs-on: ubuntu-latest
+    container:
+      image: selenium/standalone-chrome:latest
+      options: --shm-size=2g
+
     steps:
-      # Аналогичные исправления для UI-тестов
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           clean: true
           fetch-depth: 0
+          persist-credentials: false
         continue-on-error: true
 
       - name: Fix workspace permissions
@@ -180,10 +385,35 @@ jobs:
           sudo chown -R $(whoami) "$GITHUB_WORKSPACE"
           sudo chmod -R 755 "$GITHUB_WORKSPACE"
 
-      # ... остальные шаги UI-тестов ...
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-xdist pytest-html
+
+      - name: Run UI Tests
+        run: |
+          python -m pytest ui_tests/tests/ \
+            -n auto \
+            --html=ui-report.html \
+            --self-contained-html
+
+      - name: Upload UI reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-test-reports
+          path: ui-report.html
 
       - name: Final cleanup
         if: always()
         run: |
           sudo chown -R $(whoami) "$GITHUB_WORKSPACE"
           sudo rm -rf "$GITHUB_WORKSPACE/_temp"
+          git clean -ffdx || true
+
