@@ -1,4 +1,4 @@
-name: Run Tests in Docker (API + UI)
+name: Run Tests
 
 on:
   push:
@@ -7,16 +7,8 @@ on:
       - "!master"
 
 jobs:
-  test:
+  api-tests:
     runs-on: ubuntu-latest
-
-    services:
-      selenium:
-        image: selenium/standalone-chrome
-        ports:
-          - 4444:4444
-        options: --shm-size=2g
-
     steps:
       - uses: actions/checkout@v4
 
@@ -34,11 +26,11 @@ jobs:
         working-directory: ./api_tests/backend
         run: |
           docker-compose up --build -d
-          sleep 10
+          sleep 15  # Ожидаем инициализацию сервисов
 
       - name: Check backend health
         run: |
-          curl --retry 5 --retry-delay 3 --retry-all-errors http://localhost:8000/healthcheck
+          curl --retry 5 --retry-delay 5 --retry-all-errors http://localhost:8000/healthcheck
 
       - name: Install dependencies
         run: |
@@ -50,26 +42,51 @@ jobs:
         run: |
           python -m pytest api_tests/tests/ \
             -n auto \
-            --alluredir=./allure-results
+            --alluredir=./allure-results-api
 
-      - name: Run UI Tests
-        run: |
-          python -m pytest ui_tests/tests/ \
-            -n auto \
-            --html=report.html \
-            --self-contained-html \
-            --alluredir=./allure-results
-
-      - name: Upload reports
+      - name: Upload API reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-reports
-          path: |
-            report.html
-            ./allure-results/
+          name: api-test-reports
+          path: ./allure-results-api/
 
       - name: Stop Backend
         if: always()
         working-directory: ./api_tests/backend
         run: docker-compose down
+
+  ui-tests:
+    needs: api-tests  # Запускаем после API тестов (можно убрать, если нужно параллельно)
+    runs-on: ubuntu-latest
+    container:
+      image: selenium/standalone-chrome:latest
+      options: --shm-size=2g
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-xdist pytest-html
+
+      - name: Run UI Tests
+        run: |
+          python -m pytest ui_tests/tests/ \
+            -n auto \
+            --html=ui-report.html \
+            --self-contained-html
+
+      - name: Upload UI reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-test-reports
+          path: ui-report.html
