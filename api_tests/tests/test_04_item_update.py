@@ -14,26 +14,38 @@ generator = ItemGenerator()
 @allure.epic("Тестирование API.")
 @allure.feature("Работа с сущностями.")
 @allure.testcase("04_Изменение сущности.")
-@allure.title("Изменение сущности")
-def test_update_item(create_item):
-    with allure.step("1. Получить тестовые данные из фикстуры."):
-        item_id, original_data = create_item
-        original_item = ItemData(**original_data)
+class TestItemUpdate:
+    @allure.title("Изменение сущности")
+    @allure.description("""
+    1. Получение данных сущности по ID.
+    2. Корректность PATCH-запроса для обновления сущности.
+    3. Идентичность данных измененной сущности с переданными данными.
+    4. Изменение полей сущности кроме ID.
+    """)
+    def test_update_item(self, create_item):
+        with allure.step("1. Получить тестовые данные из фикстуры."):
+            item_id, original_data = create_item
+            original_item = ItemData(**original_data)
 
-    with allure.step("2. Сгенерировать новые данные для обновления."):
-        update_data = generator.generate_item()
-        ItemData(**update_data)
+        with allure.step("2. Сгенерировать новые данные для обновления."):
+            update_data = generator.generate_item()
+            ItemData(**update_data)
 
-    with allure.step("3. Отправить PATCH-запрос на обновление."):
-        response_patch = requests.patch(f"{urls.BASE_URL}/patch/{item_id}", json=update_data)
-        a.assert_status_code(response_patch, HTTPStatus.NO_CONTENT)
+        with allure.step("3. Отправить PATCH-запрос на обновление."):
+            response_patch = requests.patch(f"{urls.BASE_URL}/patch/{item_id}", json=update_data)
+            a.assert_status_code(response_patch, HTTPStatus.NO_CONTENT)
 
-    with allure.step("4. Получить обновленную сущность и проверить изменения."):
-        response_updated = requests.get(f"{urls.BASE_URL}/get/{item_id}")
-        a.assert_status_code(response_updated)
+        with allure.step("4. Получить обновленную сущность и проверить изменения."):
+            response_updated = requests.get(f"{urls.BASE_URL}/get/{item_id}")
+            a.assert_status_code(response_updated)
 
-        updated_item = ItemData(**response_updated.json())
+            updated_item = ItemData(**response_updated.json())
 
-        assert updated_item.id == item_id, "ID сущности изменился после обновления."
-        a.assert_props_are_equal(updated_item, update_data)
-        assert updated_item != original_item, "Данные сущности не изменились после обновления."
+            assert updated_item.id == item_id, "ID сущности изменился после обновления."
+            a.assert_props_are_equal(updated_item, update_data)
+            assert updated_item != original_item, "Данные сущности не изменились после обновления."
+
+# TODO: При возможности написать параметризованные тесты на:
+#  - проверку передачи пустых данных в поля сущности;
+#  - проверку передачи некорректных данных в поля сущности;
+#  - проверку изменеия поля по одному.
