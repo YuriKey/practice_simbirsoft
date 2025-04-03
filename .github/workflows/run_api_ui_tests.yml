@@ -9,9 +9,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      image: selenium/standalone-chrome:latest
-      options: --shm-size=2g
+
+    services:
+      selenium:
+        image: selenium/standalone-chrome
+        ports:
+          - 4444:4444
+        options: --shm-size=2g
 
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +24,21 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+
+      - name: Start Backend
+        working-directory: ./api_tests/backend
+        run: |
+          docker-compose up --build -d
+          sleep 10
+
+      - name: Check backend health
+        run: |
+          curl --retry 5 --retry-delay 3 --retry-all-errors http://localhost:8000/healthcheck
 
       - name: Install dependencies
         run: |
@@ -49,3 +68,8 @@ jobs:
           path: |
             report.html
             ./allure-results/
+
+      - name: Stop Backend
+        if: always()
+        working-directory: ./api_tests/backend
+        run: docker-compose down
